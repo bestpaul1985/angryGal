@@ -4,7 +4,7 @@
 //------------------------------------------------------------
 particle::particle(){
 	setInitialCondition(0,0,0,0);
-	damping = 0.015f;
+	damping = 0.1f;
 	
 }
 
@@ -50,6 +50,7 @@ void particle::addRepulsionForce(float x, float y, float radius, float scale){
 		frc.x = frc.x + diff.x * scale * pct;
         frc.y = frc.y + diff.y * scale * pct;
     }
+
 }
 
 //------------------------------------------------------------
@@ -82,6 +83,7 @@ void particle::addAttractionForce(float x, float y, float radius, float scale){
 		frc.x = frc.x - diff.x * scale * pct;
         frc.y = frc.y - diff.y * scale * pct;
     }
+    
 }
 
 //------------------------------------------------------------

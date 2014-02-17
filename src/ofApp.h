@@ -9,6 +9,7 @@
 #include "particle.h"
 #include "bullet.h"
 #include "target.h"
+#include "gal.h"
 
 class ofApp : public ofxiOSApp {
 	
@@ -33,9 +34,15 @@ class ofApp : public ofxiOSApp {
         static bool shouldRemoveBullet(bullet &b);
         static bool shouldRemoveBug(target &b);
     
+        static float map(float value, float inMin, float inMax, float outMin, float outMax, float shaper);
+    
         void gameEvent(GameEvent &e);
     
+    
+    
         ofxCoreMotion   coreMotion;
+    
+        gal             Gal;
 
         vector<bullet>  Bullets;
         vector<target>  Targets;
@@ -48,11 +55,11 @@ class ofApp : public ofxiOSApp {
         ofColor         color01;
     
         ofImage         bg01;
-
+        
         float           lastYaw;
         float           gyChange;
         float           posOffset;
-        float           velOffset;
+        float           attOffset;
         int             timer01;
         int             timer02;
     

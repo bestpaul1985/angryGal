@@ -1,5 +1,12 @@
 #include "ofApp.h"
 
+float ofApp::map(float value, float inMin, float inMax, float outMin, float outMax, float shaper){
+    float pct = ofMap (value, inMin, inMax, 0, 1, true);
+    pct = powf(pct, shaper);
+    float out = ofMap(pct, 0,1, outMin, outMax, true);
+    return out;
+}
+
 //--------------------------------------------------------------
 bool ofApp::shouldRemoveBullet(bullet &b) {
     return b.bRemove;
@@ -29,7 +36,7 @@ void ofApp::setup(){
     bReloadBuller01 = false;
 
     color01.set(255, 0, 30);
-    bg01.loadImage("image/bg001.jpg");
+    bg01.loadImage("image/agBG.png");
     
     timer01 = 0;
     timer02 = 0;
@@ -46,6 +53,10 @@ void ofApp::setup(){
     
     // listen to any of the events for the game
     ofAddListener(GameEvent::events, this, &ofApp::gameEvent);
+    
+    //Gal
+    Gal.set();
+    
 }
 
 //--------------------------------------------------------------
@@ -80,26 +91,37 @@ void ofApp::update(){
         recordPoint.erase(recordPoint.begin());
     }
     
+    
     //bullet setup + bullet reload delay
     if (gy.z < -3 ) {
         if (timer02 == 0) {
             bullet b;
             b.pos.set(ofGetWidth()/4+posOffset, ofGetHeight()-80);
-            b.vel.set(3+velOffset,-10);
+            b.vel.set(-8+ofRandom(-4, 4),-6+ofRandom(-6, 6));
+            b.attraPos.set(150,150+ofRandom(-100,150));
+            b.attraPos.x += attOffset;
             b.set();
             Bullets.push_back(b);
             bReloadBuller01 = true;
         }
-    }else if(gy.z > 3){
-        if (timer02 == 0) {
-            bullet b;
-            b.pos.set(ofGetWidth()/4*3+posOffset, ofGetHeight()-80);
-            b.vel.set(-3+velOffset,-10);
-            b.set();
-            Bullets.push_back(b);
-            bReloadBuller01 = true;
-        }
+    }else if(gy.z > 3 && Gal.leftNum == 0){
+        Gal.bLeftHand = true;
+        Gal.bButtletLeft = true;
     }
+    
+    //check if gal num == 2, if it is , shot a bullet.
+    if (Gal.leftNum == 1 && Gal.bButtletLeft) {
+        bullet b;
+        b.pos.set(ofGetWidth()/4*3+posOffset, ofGetHeight()-80);
+        b.vel.set(-3,-10);
+        b.attraPos.x += attOffset;
+        b.attractScale = 2;
+        b.set();
+        Bullets.push_back(b);
+        Gal.bButtletLeft = false;
+    }
+    
+    
     
     for (int i=0; i<Bullets.size(); i++) {
         Bullets[i].update();
@@ -136,13 +158,14 @@ void ofApp::update(){
             float   minSize = Targets[j].size;
             
             if(a.distance(b) < minSize) {
-                
+
                 static GameEvent newEvent;
                 newEvent.message = "TARGET HIT";
                 newEvent.Target  = &Targets[j];
                 newEvent.Bullet  = &Bullets[i];
                 
                 ofNotifyEvent(GameEvent::events, newEvent);
+                
             }
         }
     }
@@ -164,14 +187,10 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     
-    //background uses zoom up and translate
-    ofPushMatrix();
-    int Z = 0;
-    if (bZoomIn) Z = 0;
-    ofTranslate(bg01.getWidth()/2,bg01.getHeight()/2, Z);
+    //background
     ofSetColor(255);
-    bg01.draw(-bg01.getWidth()/2, -bg01.getHeight()/2);
-    ofPopMatrix();
+    bg01.draw(0,0);
+
 
     //some info about coreMotion
     if (bShowINFO) {
@@ -195,22 +214,25 @@ void ofApp::draw(){
  
     
     //bullets. they are particles everything use paw iphone it adds one.
-    ofSetColor(255, 255, 0);
     for (int i=0; i<Bullets.size(); i++) {
         Bullets[i].draw();
     }
     
+    //gal back
+    Gal.draw();
     
     //two red dot for indicating where is the weapone
-    ofSetColor(255, 0, 0);
-    ofCircle(ofGetWidth()/4*3+posOffset, ofGetHeight()-80, 10);
-    ofCircle(ofGetWidth()/4 + posOffset, ofGetHeight()-80, 10);
+//    ofSetColor(255, 0, 0);
+//    ofCircle(ofGetWidth()/4*3+posOffset, ofGetHeight()-80, 10);
+//    ofCircle(ofGetWidth()/4 + posOffset, ofGetHeight()-80, 10);
 
+    //add atraction force center
+//    ofCircle(150+attOffset, 150,10);
     
     //tagets will show up when they get out from the room
-    for (int i=0; i<Targets.size(); i++) {
-        Targets[i].draw();
-    }
+//    for (int i=0; i<Targets.size(); i++) {
+//        Targets[i].draw();
+//    }
     
     //the diagram showing up the change about paw force
     int diff=0;
@@ -245,13 +267,22 @@ void ofApp::touchDown(ofTouchEventArgs & touch){
     if (touch.id == 0) {
         ofPoint touchPos(touch.x,touch.y);
         if (contorlBar.inside(touchPos)) {
-//            bulletVel.x = ofMap(touchPos.x, 0,  ofGetWidth()/2, -7, -3,true);
-//            bulletOrgPos.x = ofMap(touchPos.x, 0, ofGetWidth(), ofGetWidth()/4 * 3-30, ofGetWidth()/4 * 3+30);
             
-            velOffset = ofMap(touchPos.x, 0, ofGetWidth(), -3, 3);
-            posOffset = ofMap(touchPos.x, 0, ofGetWidth(), -30, 30);
+            int diff =  touchPos.x - ofGetWidth()/2;
+            if (diff>0) {
+                posOffset = map(diff, 0, ofGetWidth()/2, 0, 50, 0.4);
+                attOffset = map(diff, 0, ofGetWidth()/2, 0, 10, 0.4);
+                Gal.offSet = posOffset;
+            }else if(diff<0){
+                posOffset = map(diff, 0, -ofGetWidth()/2, 0, -50, 0.4);
+                attOffset = map(diff, 0, -ofGetWidth()/2, 0, -10, 0.4);
+                Gal.offSet = posOffset;
+            }else{
+                posOffset = 0;
+                attOffset =0;
+                Gal.offSet = posOffset;
+            }
         }
-        
     }
 }
 
@@ -261,8 +292,22 @@ void ofApp::touchMoved(ofTouchEventArgs & touch){
     if (touch.id == 0) {
         ofPoint touchPos(touch.x,touch.y);
         if (contorlBar.inside(touchPos)) {
-            velOffset = ofMap(touchPos.x, 0, ofGetWidth(), -3, 3);
-            posOffset = ofMap(touchPos.x, 0, ofGetWidth(), -30, 30);
+            
+            int diff =  touchPos.x - ofGetWidth()/2;
+            if (diff>0) {
+                posOffset = map(diff, 0, ofGetWidth()/2, 0, 50, 0.4);
+                attOffset = map(diff, 0, ofGetWidth()/2, 0, 10, 0.4);
+                Gal.offSet = posOffset;
+            }else if(diff<0){
+                posOffset = map(diff, 0, -ofGetWidth()/2, 0, -50, 0.4);
+                attOffset = map(diff, 0, -ofGetWidth()/2, 0, -10, 0.4);
+                Gal.offSet = posOffset;
+            }else{
+                posOffset = 0;
+                attOffset = 0;
+                Gal.offSet = posOffset;
+            }
+           
         }
     }
 }
@@ -271,8 +316,9 @@ void ofApp::touchMoved(ofTouchEventArgs & touch){
 void ofApp::touchUp(ofTouchEventArgs & touch){
 
     if (touch.id == 0) {
-        velOffset = 0;
         posOffset = 0;
+        attOffset = 0;
+        Gal.offSet = posOffset;
     }
     
 }
