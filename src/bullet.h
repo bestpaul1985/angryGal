@@ -11,15 +11,25 @@ public:
     ofPoint     sizeRange;
     bool        bRemove;
     float       size;
+    float       orgW;
+    float       orgH;
+    float       w,h;
     int         flyDis;
     float       attractScale;
+    ofImage*    kknife[8];
+    int         timer;
+    int         num;
     
     bullet(){
         size = 20;
         flyDis = 250;
-        attraPos.set(150, 150);
+        attraPos.set(150, 240);
         bRemove = false;
-        attractScale = 1.5;
+        attractScale = 1;
+        orgW = 13;
+        orgH = 60;
+        num = 0;
+        timer = ofGetElapsedTimeMillis();
     }
     
     void set(){
@@ -28,7 +38,7 @@ public:
     
     void update(){
         myBullet.resetForce();
-        myBullet.addAttractionForce(attraPos.x, attraPos.y, 480, attractScale);
+        myBullet.addAttractionForce(attraPos.x, attraPos.y, 600, attractScale);
         myBullet.addDampingForce();
         myBullet.update();
         
@@ -39,14 +49,30 @@ public:
             bRemove = true;
         }
         
-        size = ofMap( myBullet.pos.y ,ofGetHeight(), attraPos.y, 20, 2, true);
+        w = ofMap( myBullet.pos.y ,ofGetHeight()-80, attraPos.y, orgW, orgW/1.5, true);
+        h = ofMap( myBullet.pos.y ,ofGetHeight()-80, attraPos.y, orgH, orgH/1.5, true);
         
     }
     
     void draw(){
         
-        ofSetColor(0,0,0);
-        ofCircle(myBullet.pos.x, myBullet.pos.y, size);
+//        ofSetColor(255, 0, 0);
+//        ofCircle(attraPos.x,attraPos.y,6);
+
+        
+        if (ofGetElapsedTimeMillis()-timer>100) {
+            num++;
+            if (num > 7) {
+                num = 0;
+            }
+        }
+        
+        ofSetColor(255);
+        ofPushMatrix();
+        ofTranslate(myBullet.pos.x, myBullet.pos.y);
+        kknife[num]->draw(-kknife[num]->getWidth()/2, -kknife[num]->getHeight()/2, w, h);
+        ofPopMatrix();
+        
     }
     
 };

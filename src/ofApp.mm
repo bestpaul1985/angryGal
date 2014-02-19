@@ -36,7 +36,7 @@ void ofApp::setup(){
     bReloadBuller01 = false;
 
     color01.set(255, 0, 30);
-    bg01.loadImage("image/agBG.png");
+    
     
     timer01 = 0;
     timer02 = 0;
@@ -44,10 +44,8 @@ void ofApp::setup(){
     
     contorlBar.set(0,0, ofGetWidth(), ofGetHeight());
     
-    
+    //setup emeneys
     target t;
-    t.pos.set(0, 100);
-    t.vel.set(10, 0);
     t.set();
     Targets.push_back(t);
     
@@ -56,7 +54,12 @@ void ofApp::setup(){
     
     //Gal
     Gal.set();
+    imageloader();
     
+    //bullet
+    bulletOrgPos.set(0, 0);
+    attOffsetX = 0;
+    attOffsetY = 0;
 }
 
 //--------------------------------------------------------------
@@ -93,32 +96,50 @@ void ofApp::update(){
     
     
     //bullet setup + bullet reload delay
-    if (gy.z < -3 ) {
-        if (timer02 == 0) {
-            bullet b;
-            b.pos.set(ofGetWidth()/4+posOffset, ofGetHeight()-80);
-            b.vel.set(-8+ofRandom(-4, 4),-6+ofRandom(-6, 6));
-            b.attraPos.set(150,150+ofRandom(-100,150));
-            b.attraPos.x += attOffset;
-            b.set();
-            Bullets.push_back(b);
-            bReloadBuller01 = true;
+    
+    if (gy.z < -1 ) {
+        
+        if (!Gal.bLeftHand && !Gal.bRightHand) {
+            Gal.bLeftHand = true;
+            Gal.bShot = true;
+            Gal.lastTime =ofGetElapsedTimeMillis();
+            
+            bulletOrgPos.set(ofGetWidth()/4+posOffset, ofGetHeight()-80);
+            attOffsetY = map(gy.z, 0, -15, 0, 240, 0.5);
         }
-    }else if(gy.z > 3 && Gal.leftNum == 0){
-        Gal.bLeftHand = true;
-        Gal.bButtletLeft = true;
+        
+        
+    }else if(gy.z > 1){
+        if (!Gal.bLeftHand && !Gal.bRightHand) {
+            Gal.bRightHand = true;
+            Gal.bShot = true;
+            Gal.lastTime =ofGetElapsedTimeMillis();
+            
+            bulletOrgPos.set(ofGetWidth()/4*3+posOffset, ofGetHeight()-80);
+            attOffsetY = map(gy.z, 0, 15, 0, 240, 0.5);
+
+        }
     }
     
-    //check if gal num == 2, if it is , shot a bullet.
-    if (Gal.leftNum == 1 && Gal.bButtletLeft) {
-        bullet b;
-        b.pos.set(ofGetWidth()/4*3+posOffset, ofGetHeight()-80);
-        b.vel.set(-3,-10);
-        b.attraPos.x += attOffset;
-        b.attractScale = 2;
-        b.set();
-        Bullets.push_back(b);
-        Gal.bButtletLeft = false;
+    //right hand bullet, check if gal's hand in the middle of the action, if it is , shot a bullet.
+    if (Gal.bShot) {
+        if (Gal.leftNum == 2 || Gal.rightNum == 2 ) {
+            bullet b;
+            b.pos.set(bulletOrgPos);
+//            int chance = ofRandom(99);
+//            if (chance >= 50) {
+//                attOffsetX *= -1;
+//            }
+            b.attraPos.x += attOffsetX;
+            b.attraPos.y -= attOffsetY;
+            b.attractScale = 1;
+            for (int i=0; i<8; i++) {
+                b.kknife[i] = &kknife[i];
+            }
+            b.set();
+            Bullets.push_back(b);
+            Gal.bShot = false;
+        }
     }
     
     
@@ -130,15 +151,6 @@ void ofApp::update(){
     //check if we want to remove the bullet
     ofRemove(Bullets, shouldRemoveBullet);
    
-    //reloading timer running for keepping bullet amount;
-    if(bReloadBuller01){
-        timer02++;
-        if (timer02 > 10) {
-            timer02 = 0;
-            bReloadBuller01 = false;
-        }
-    }
-
     
     //targets update
     for (int i=0; i<Targets.size(); i++) {
@@ -154,7 +166,7 @@ void ofApp::update(){
     for (int i=0; i<Bullets.size(); i++) {
         for (int j=0; j<Targets.size(); j++) {
             ofVec2f a       = Bullets[i].myBullet.pos;
-            ofVec2f b       = Targets[j].targ.pos;
+            ofVec2f b       = Targets[j].pos;
             float   minSize = Targets[j].size;
             
             if(a.distance(b) < minSize) {
@@ -171,17 +183,14 @@ void ofApp::update(){
     }
     
     //check if there is no more target, if it is 0, we will add one.
-    if (Targets.size() == 0) {
-        int num = ofRandom(3);
-        for (int i=0; i<num; i++) {
-            target t;
-            t.pos.set(0, ofRandom(0,200));
-            t.vel.set(ofRandom(5,10), 0);
-            t.set();
-            Targets.push_back(t);
-        }
-       
+    
+    if (Targets.size()==0) {
+        target t;
+        t.set();
+        Targets.push_back(t);
     }
+  
+    
 }
 
 //--------------------------------------------------------------
@@ -227,32 +236,32 @@ void ofApp::draw(){
 //    ofCircle(ofGetWidth()/4 + posOffset, ofGetHeight()-80, 10);
 
     //add atraction force center
-//    ofCircle(150+attOffset, 150,10);
+//    ofCircle(150+attOffsetX, 150+attOffsetY,10);
     
     //tagets will show up when they get out from the room
-//    for (int i=0; i<Targets.size(); i++) {
-//        Targets[i].draw();
-//    }
+    for (int i=0; i<Targets.size(); i++) {
+        Targets[i].draw();
+    }
     
     //the diagram showing up the change about paw force
-    int diff=0;
-    if (timer01>ofGetWidth()) {
-        diff = timer01 - ofGetWidth();
-    }
-    
-    for (int i=0; i<recordPoint.size(); i++) {
-        int w =1;
-        int h =1;
-        
-        if (recordPoint[i].z == 1) {
-            ofSetColor(255,0,0);
-            w = 1;
-            h = 1;
-        }else{
-            ofSetColor(255);
-        }
-//        ofRect(recordPoint[i].x - diff, recordPoint[i].y, w, h);
-    }
+//    int diff=0;
+//    if (timer01>ofGetWidth()) {
+//        diff = timer01 - ofGetWidth();
+//    }
+//    
+//    for (int i=0; i<recordPoint.size(); i++) {
+//        int w =1;
+//        int h =1;
+//        
+//        if (recordPoint[i].z == 1) {
+//            ofSetColor(255,0,0);
+//            w = 1;
+//            h = 1;
+//        }else{
+//            ofSetColor(255);
+//        }
+////        ofRect(recordPoint[i].x - diff, recordPoint[i].y, w, h);
+//    }
 
 }
 
@@ -270,20 +279,22 @@ void ofApp::touchDown(ofTouchEventArgs & touch){
             
             int diff =  touchPos.x - ofGetWidth()/2;
             if (diff>0) {
-                posOffset = map(diff, 0, ofGetWidth()/2, 0, 50, 0.4);
-                attOffset = map(diff, 0, ofGetWidth()/2, 0, 10, 0.4);
+                posOffset = map(diff, 0, ofGetWidth()/2, 0, 80, 0.7);
+                attOffsetX = map(diff, 0, ofGetWidth()/2, 0, 80, 0.7);
                 Gal.offSet = posOffset;
             }else if(diff<0){
-                posOffset = map(diff, 0, -ofGetWidth()/2, 0, -50, 0.4);
-                attOffset = map(diff, 0, -ofGetWidth()/2, 0, -10, 0.4);
+                posOffset = map(diff, 0, -ofGetWidth()/2, 0, -80, 0.7);
+                attOffsetX = map(diff, 0, -ofGetWidth()/2, 0, -80, 0.7);
                 Gal.offSet = posOffset;
             }else{
                 posOffset = 0;
-                attOffset =0;
+                attOffsetX =0;
                 Gal.offSet = posOffset;
             }
         }
     }
+    
+    cout<<touch<<endl;
 }
 
 //--------------------------------------------------------------
@@ -295,16 +306,12 @@ void ofApp::touchMoved(ofTouchEventArgs & touch){
             
             int diff =  touchPos.x - ofGetWidth()/2;
             if (diff>0) {
-                posOffset = map(diff, 0, ofGetWidth()/2, 0, 50, 0.4);
-                attOffset = map(diff, 0, ofGetWidth()/2, 0, 10, 0.4);
+                posOffset = map(diff, 0, ofGetWidth()/2, 0, 80, 0.7);
+                attOffsetX = map(diff, 0, ofGetWidth()/2, 0, 80, 0.7);
                 Gal.offSet = posOffset;
             }else if(diff<0){
-                posOffset = map(diff, 0, -ofGetWidth()/2, 0, -50, 0.4);
-                attOffset = map(diff, 0, -ofGetWidth()/2, 0, -10, 0.4);
-                Gal.offSet = posOffset;
-            }else{
-                posOffset = 0;
-                attOffset = 0;
+                posOffset = map(diff, 0, -ofGetWidth()/2, 0, -80, 0.7);
+                attOffsetX = map(diff, 0, -ofGetWidth()/2, 0, -80, 0.7);
                 Gal.offSet = posOffset;
             }
            
@@ -315,11 +322,11 @@ void ofApp::touchMoved(ofTouchEventArgs & touch){
 //--------------------------------------------------------------
 void ofApp::touchUp(ofTouchEventArgs & touch){
 
-    if (touch.id == 0) {
-        posOffset = 0;
-        attOffset = 0;
-        Gal.offSet = posOffset;
-    }
+//    if (touch.id == 0) {
+//        posOffset = 0;
+//        attOffsetX = 0;
+//        Gal.offSet = posOffset;
+//    }
     
 }
 
@@ -352,3 +359,16 @@ void ofApp::gotMemoryWarning(){
 void ofApp::deviceOrientationChanged(int newOrientation){
 
 }
+//--------------------------------------------------------------
+void ofApp::imageloader(){
+    //BG
+    bg01.loadImage("image/agBG.png");
+    
+    //right bullet
+    for (int i=0; i<8; i++) {
+        kknife[i].loadImage("image/skknife0"+ofToString(1+i)+".png");
+    }
+    
+
+}
+

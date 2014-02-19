@@ -24,7 +24,7 @@ class ofApp : public ofxiOSApp {
         void touchUp(ofTouchEventArgs & touch);
         void touchDoubleTap(ofTouchEventArgs & touch);
         void touchCancelled(ofTouchEventArgs & touch);
-    
+        void imageloader();
     
         void lostFocus();
         void gotFocus();
@@ -59,18 +59,20 @@ class ofApp : public ofxiOSApp {
         float           lastYaw;
         float           gyChange;
         float           posOffset;
-        float           attOffset;
+        float           attOffsetX;
+        float           attOffsetY;
+
         int             timer01;
         int             timer02;
     
-        ofPoint lastGY;
-        ofPoint bulletVel;
-        ofPoint bulletOrgPos;
+        ofPoint         lastGY;
+        ofPoint         bulletVel;
+        ofPoint         bulletOrgPos;
     
-        ofRectangle contorlBar;
+        ofRectangle     contorlBar;
     
     
-    
+        ofImage         kknife[8];
     
 };
 
