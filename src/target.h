@@ -21,6 +21,7 @@ public:
     }
     
     target(){
+        
         bRemove = false;
         orgSize = 15;
         size = 15;
