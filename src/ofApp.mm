@@ -167,9 +167,9 @@ void ofApp::update(){
         for (int j=0; j<Targets.size(); j++) {
             ofVec2f a       = Bullets[i].myBullet.pos;
             ofVec2f b       = Targets[j].pos;
-            float   minSize = Targets[j].size;
+            float   scale = Targets[j].scale;
             
-            if(a.distance(b) < minSize) {
+            if(a.distance(b) < 25*scale) {
 
                 static GameEvent newEvent;
                 newEvent.message = "TARGET HIT";

@@ -8,7 +8,9 @@ public:
     ofPoint             door[6];
     vector<ofPoint>     points;
     bool                bRemove;
-    float               orgSize,size;
+    ofRectangle         body;
+    float               w,h;
+    float               scale;
     float               pct,vel;
     float               timer1;
     int                 num;
@@ -23,33 +25,38 @@ public:
     target(){
         
         bRemove = false;
-        orgSize = 15;
-        size = 15;
+        scale = 0;
+        w = 50;
+        h = 100;
+        body.set(140,168, 100*0.2, 150*0.2);
         pct = 0;
-        vel = 0.02;
+        vel = 0.01;
         timer1 = 0;
         num = 0;
         
-        door[0].set(140,168);
-        door[1].set(96,198);
-        door[2].set(35,230);
-        door[3].set(210,183);
-        door[4].set(265,202);
-        door[5].set(317,269);
+        door[0].set(140,168,0.2);
+        door[1].set(210,191,0.5);
+        door[2].set(99,225,0.6);
+        door[3].set(257,253,0.7);
+        door[4].set(24,300,0.8);
+        door[5].set(319,395,1);
         
         
     }
     
     void set(){
         bRemove = false;
-
-        trun01.set(ofGetWidth()/2, orgPos.y);
-        trun02.set(trun01.x, endPos.y);
+//        trun01.set(ofGetWidth()/2, orgPos.y);
+//        trun02.set(trun01.x, endPos.y);
+//        
+//        points.push_back(orgPos);
+//        points.push_back(trun01);
+//        points.push_back(trun02);
+//        points.push_back(endPos);
         
-        points.push_back(orgPos);
-        points.push_back(trun01);
-        points.push_back(trun02);
-        points.push_back(endPos);
+        for (int i=0; i<6; i++) {
+            points.push_back(door[i]);
+        }
         
     }
     
@@ -68,20 +75,23 @@ public:
         
         pos.x = (1-pct)*points[num].x + pct*points[num+1].x;
         pos.y = (1-pct)*points[num].y + pct*points[num+1].y;
-
+        scale = (1-pct)*points[num].z + pct*points[num+1].z;
         
+        body.setFromCenter(pos.x,pos.y,w*scale,h*scale);
     }
     
     void draw(){
         
         ofSetColor(255, 0, 0);
-        ofCircle(pos.x,pos.y, orgSize);
+        ofRect(body);
+        
+        ofSetColor(255, 0,200);
+        ofCircle(pos.x, pos.y, 25*scale);
     }
     
     void bounceOffWalls(){
         
         
     }
-    
     
 };
